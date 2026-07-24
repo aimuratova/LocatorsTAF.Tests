@@ -2,6 +2,7 @@
 using LocatorsTAF.CoreLayer.Interfaces;
 using LocatorsTAF.CoreLayer.Utilities;
 using Microsoft.Extensions.Configuration;
+using NUnit.Framework.Interfaces;
 using OpenQA.Selenium.Support.UI;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,7 @@ namespace LocatorsTAF.Tests.Tests
     public class BaseTest
     {
         protected ILoggingService Logger = null!;
+        protected IScreenshotMakerService ScreenshotMakerService = null!;
 
         protected DriverManager DriverManager { get; private set; }
         protected IWebDriverWrapper DriverWrapper { get; private set; }
@@ -27,14 +29,21 @@ namespace LocatorsTAF.Tests.Tests
             DriverWrapper = new WebdriverWrapper(DriverManager);
 
             Logger = new LoggerService();
-
             Logger.Info("========== Test started ==========");
+
+            ScreenshotMakerService = new ScreenshotMakerService(DriverWrapper);
         }
 
         [TearDown]
         public void OneTimeTearDown()
-        {
+        {            
+            if (TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed)
+            {
+                ScreenshotMakerService.TakeScreenshot();
+            }
+
             DriverManager.QuitBrowser();
+
             Logger.Info("========== Test finished ==========");
         }
     }
