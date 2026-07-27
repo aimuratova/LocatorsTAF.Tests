@@ -9,15 +9,10 @@ using System.Threading.Tasks;
 namespace LocatorsTAF.ReqnrollTests.StepDefinitions
 {
     [Binding]
-    public class ServicesSteps
+    public class ServicesSteps(DriverContext driverContext)
     {
-        private readonly MainPage _mainPage;
+        private readonly MainPage _mainPage = new MainPage(driverContext.DriverWrapper);
         private ServicesPage _servicesPage;
-
-        public ServicesSteps(DriverContext driverContext)
-        {
-            _mainPage = new MainPage(driverContext.DriverWrapper);
-        }
 
         [Given("I open EPAM home page")]
         public void GivenIOpenEPAMHomePage()
