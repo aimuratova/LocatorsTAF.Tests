@@ -16,22 +16,47 @@ namespace LocatorsTAF.CoreLayer.API.Clients
         {
         }
 
-        public async Task<(RestResponse Response, List<User> Users)> GetUsersAsync()
+        public async Task<List<User>> GetUsersAsync()
+        {
+            var response = await GetUsersResponseAsync();
+
+            return JsonSerializer.Deserialize<List<User>>(
+                       response.Content ?? "[]",
+                       new JsonSerializerOptions
+                       {
+                           PropertyNameCaseInsensitive = true
+                       })
+                   ?? [];
+        }
+
+        public async Task<RestResponse> GetUsersResponseAsync()
         {
             var request = new ApiRequestBuilder("users", Method.Get)
                 .AddHeader("Accept", "application/json")
                 .Build();
 
-            var response = await ExecuteAsync(request);
+            return await ExecuteAsync(request);
+        }
 
-            var users = JsonSerializer.Deserialize<List<User>>(
-                response.Content ?? "[]",
-                new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                }) ?? [];
+        public async Task<RestResponse> CreateUserAsync(CreateUserRequest user)
+        {
+            var request = new ApiRequestBuilder("users", Method.Post)
+                .AddHeader("Accept", "application/json")
+                .AddJsonBody(user)
+                .Build();
 
-            return (response, users);
+            return await ExecuteAsync(request);
+        }
+
+        public async Task<RestResponse> GetInvalidEndpointAsync()
+        {
+            var request = new ApiRequestBuilder(
+                    "invalidendpoint",
+                    Method.Get)
+                .AddHeader("Accept", "application/json")
+                .Build();
+
+            return await ExecuteAsync(request);
         }
     }
 }

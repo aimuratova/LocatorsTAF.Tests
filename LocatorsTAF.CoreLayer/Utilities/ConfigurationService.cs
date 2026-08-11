@@ -14,7 +14,7 @@ namespace LocatorsTAF.CoreLayer.Utilities
         public static string AppUrl { get; set; }
         public static BrowserType BrowserType { get; set; }
         public static int ImplicitWaitTime { get; set; }
-
+                
         public static void LoadConfiguration()
         {
             IConfiguration configuration = new ConfigurationBuilder()
@@ -49,6 +49,15 @@ namespace LocatorsTAF.CoreLayer.Utilities
             {
                 throw new ArgumentException($"Invalid ImplicitWaitTime: {implicitWaitTimeString}");
             }
+        }
+
+        public static string GetConfigurationValue(string key)
+        {
+            IConfiguration configuration = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appSettings.json", optional: false, reloadOnChange: false)
+                .Build();
+            return configuration[key];
         }
     }
 }
