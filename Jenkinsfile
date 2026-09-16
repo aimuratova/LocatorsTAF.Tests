@@ -1,8 +1,9 @@
 pipeline {
 
     agent {
-        docker {
+         docker {
             image 'mcr.microsoft.com/dotnet/sdk:10.0'
+            args '-u root --entrypoint=""'
         }
     }
 
