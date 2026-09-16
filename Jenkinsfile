@@ -2,9 +2,22 @@ pipeline {
     agent any
 
     stages {
-        stage('Test Jenkins') {
+        stage('Environment') {
             steps {
-                sh 'echo "Jenkins is working!"'
+                sh 'dotnet --version'
+                sh 'dotnet --info'
+            }
+        }
+
+        stage('Restore') {
+            steps {
+                sh 'dotnet restore'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'dotnet build --configuration Release --no-restore'
             }
         }
     }
