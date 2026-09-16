@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace LocatorsTAF.Tests.Tests
 {
+    [Category("UI")]
     public class CareerSearchTests : BaseTest
     {
         [TestCase("Java", "Poland")]

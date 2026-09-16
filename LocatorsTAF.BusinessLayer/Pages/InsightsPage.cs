@@ -49,22 +49,6 @@ namespace LocatorsTAF.BusinessLayer.Pages
             string oldUrl = driver.GetUrl();
 
             readMoreButton.Click();
-            //wait.Until(d => d.FindElement(By.XPath("//div[contains(@class,'owl-item active')]//a[contains(@class,'slider-cta-link')]"))).Click();
-
-            //var readMore = wait.Until(d =>
-            //{
-            //    var el = d.FindElement(By.XPath("//div[contains(@class,'owl-item')]//a[contains(@class,'slider-cta-link')]"));
-            //    var classes = el.FindElement(By.XPath("./ancestor::div[contains(@class,'owl-item')]"))
-            //                    .GetAttribute("class");
-
-            //    return classes.Contains("active") &&
-            //           !classes.Contains("cloned") &&
-            //           !classes.Contains("owl-animated")
-            //        ? el
-            //        : null;
-            //});
-
-            //readMore.Click();
 
             wait.Until(d => d.Url != oldUrl);
         }
@@ -72,8 +56,6 @@ namespace LocatorsTAF.BusinessLayer.Pages
         public string GetReadMoreArticleTitle()
         {
             return readMoreArticleTitle.GetText();
-
-            //return wait.Until(d => d.FindElement(By.TagName("h1"))).Text;
         }
     }
 }

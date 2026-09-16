@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace LocatorsTAF.Tests.Tests
 {
+    [Category("UI")]
     public class GlobalSearchTests : BaseTest
     {
         

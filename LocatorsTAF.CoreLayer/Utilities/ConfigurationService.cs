@@ -14,15 +14,16 @@ namespace LocatorsTAF.CoreLayer.Utilities
         public static string AppUrl { get; set; }
         public static BrowserType BrowserType { get; set; }
         public static int ImplicitWaitTime { get; set; }
-                
+
         public static void LoadConfiguration()
         {
-            IConfiguration configuration = new ConfigurationBuilder()
+            var configuration = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile("appSettings.json", optional: false, reloadOnChange: false)
                 .Build();
 
-            var browser = configuration["Browser:Type"];
+            // Jenkins/environment variable has priority over appSettings.json
+            var browser = Environment.GetEnvironmentVariable("BROWSER") ?? configuration["Browser:Type"];
 
             if (Enum.TryParse(browser, true, out BrowserType parsedType))
             {
@@ -53,7 +54,7 @@ namespace LocatorsTAF.CoreLayer.Utilities
 
         public static string GetConfigurationValue(string key)
         {
-            IConfiguration configuration = new ConfigurationBuilder()
+            var configuration = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile("appSettings.json", optional: false, reloadOnChange: false)
                 .Build();

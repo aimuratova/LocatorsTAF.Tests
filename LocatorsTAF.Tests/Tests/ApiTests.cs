@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 namespace LocatorsTAF.Tests.Tests
 {
     [TestFixture]
+    [Category("API")]
     [Parallelizable(ParallelScope.All)]
     public class ApiTests
     {

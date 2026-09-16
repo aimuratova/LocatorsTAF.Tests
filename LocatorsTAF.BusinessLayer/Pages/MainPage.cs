@@ -30,7 +30,7 @@ namespace LocatorsTAF.BusinessLayer.Pages
             searchMagnifier = new WebElementWrapper(driver, By.CssSelector("button[class*='search']"));
             searchInput = new WebElementWrapper(driver, By.XPath("//input[@type='search']"));
             findButton = new WebElementWrapper(driver, By.XPath("//button[.//span[normalize-space()='Find']]"));
-            pdfDownloadLink = new WebElementWrapper(driver, By.XPath("//a[contains(@href,'Code-Of-Conduct_01_26.pdf')]"));
+            pdfDownloadLink = new WebElementWrapper(driver, By.XPath("//a[contains(@href, 'Code_of_Ethical_Conduct.pdf') and normalize-space()='Code of Ethical Conduct (PDF)']"));
             insightLink = new WebElementWrapper(driver, By.CssSelector("a.top-navigation__item-link[href='/insights']"));
             servicesLink = new WebElementWrapper(driver, By.XPath("//a[@href='/services']"));
 

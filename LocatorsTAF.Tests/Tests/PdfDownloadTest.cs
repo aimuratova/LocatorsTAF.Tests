@@ -9,9 +9,10 @@ using System.Threading.Tasks;
 
 namespace LocatorsTAF.Tests.Tests
 {
+    [Category("UI")]
     public class PdfDownloadTest : BaseTest
     {
-        [TestCase("Code-Of-Conduct_01_26.pdf")]
+        [TestCase("Code_of_Ethical_Conduct.pdf")]
         public void PdfShouldBeDownloaded(string fileName)
         {
             Logger.Info($"PdfDownloadTest test with parameters: fileName {fileName}");
