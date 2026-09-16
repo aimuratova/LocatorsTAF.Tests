@@ -2,14 +2,16 @@ pipeline {
     agent {
         docker {
             image 'mcr.microsoft.com/dotnet/sdk:10.0'
+            args '-u root --entrypoint=""'
         }
     }
 
     stages {
-        stage('Environment') {
+        stage('Checkout') {
             steps {
-                sh 'dotnet --version'
-                sh 'dotnet --info'
+                echo 'Getting source code from Git...'
+                sh 'git clean -fdx'
+                checkout scm
             }
         }
 
