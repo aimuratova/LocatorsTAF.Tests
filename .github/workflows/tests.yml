@@ -1,0 +1,91 @@
+name: API and UI Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+  schedule:
+    - cron: '0 6 * * 1-5'
+
+  workflow_dispatch:
+    inputs:
+      browser:
+        description: 'Browser for UI tests'
+        required: true
+        default: 'Chrome'
+        type: choice
+        options:
+          - Chrome
+          - Firefox
+
+jobs:
+
+  api-tests:
+    name: API Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Run API tests
+        run: |
+          dotnet test src/GH.TAF.Tests/GH.TAF.Tests.csproj \
+            --filter "Category=API" \
+            --logger "trx;LogFileName=api-results.trx" \
+            --results-directory ./TestResults
+
+      - name: Upload API results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: api-test-results
+          path: ./TestResults/
+
+
+  ui-tests:
+    name: UI Tests
+    runs-on: ubuntu-latest
+    needs: api-tests
+    if: always()
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Run UI tests
+        env:
+          BROWSER: ${{ inputs.browser || 'Chrome' }}
+        run: |
+          echo "Running UI tests with browser: $BROWSER"
+
+          dotnet test src/GH.TAF.Tests/GH.TAF.Tests.csproj \
+            --filter "Category=UI" \
+            --logger "trx;LogFileName=ui-results.trx" \
+            --results-directory ./TestResults
+
+      - name: Upload UI results and screenshots
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: ui-test-results
+          path: |
+            ./TestResults/
+            ./Screenshots/
