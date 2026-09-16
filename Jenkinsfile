@@ -1,6 +1,10 @@
 pipeline {
 
-    agent any
+    agent {
+        docker {
+            image 'mcr.microsoft.com/dotnet/sdk:10.0'
+        }
+    }
 
     parameters {
         choice(
@@ -11,7 +15,6 @@ pipeline {
     }
 
     triggers {
-        // Run every weekday at approximately 06:00
         cron('H 6 * * 1-5')
     }
 
@@ -24,6 +27,14 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
+            }
+        }
+
+        stage('Check .NET') {
+            steps {
+                sh '''
+                    dotnet --info
+                '''
             }
         }
 
@@ -79,9 +90,8 @@ pipeline {
                     stageResult: 'FAILURE'
                 ) {
                     withEnv(["BROWSER=${params.BROWSER}"]) {
-
                         sh '''
-                            echo "Running UI tests with browser: $BROWSER"
+                            echo "Browser: $BROWSER"
 
                             dotnet test "$TEST_PROJECT" \
                                 --configuration Release \
@@ -96,7 +106,6 @@ pipeline {
 
             post {
                 always {
-
                     archiveArtifacts(
                         artifacts: 'TestResults/UI/**/*',
                         allowEmptyArchive: true
@@ -118,9 +127,6 @@ pipeline {
 
     post {
         always {
-
-            echo 'Publishing test results...'
-
             archiveArtifacts(
                 artifacts: 'TestResults/**/*',
                 allowEmptyArchive: true
