@@ -39,7 +39,7 @@ jobs:
 
       - name: Run API tests
         run: |
-          dotnet test src/GH.TAF.Tests/GH.TAF.Tests.csproj \
+          dotnet test LocatorsTAF.Tests/LocatorsTAF.Tests.csproj \
             --filter "Category=API" \
             --logger "trx;LogFileName=api-results.trx" \
             --results-directory ./TestResults
@@ -76,7 +76,7 @@ jobs:
         run: |
           echo "Running UI tests with browser: $BROWSER"
 
-          dotnet test src/GH.TAF.Tests/GH.TAF.Tests.csproj \
+          dotnet test LocatorsTAF.Tests/LocatorsTAF.Tests.csproj \
             --filter "Category=UI" \
             --logger "trx;LogFileName=ui-results.trx" \
             --results-directory ./TestResults
