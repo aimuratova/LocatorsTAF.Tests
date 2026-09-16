@@ -11,14 +11,12 @@ pipeline {
     }
 
     triggers {
-        // Run every weekday at a random minute/hour
-        // to avoid all Jenkins jobs starting simultaneously.
+        // Run every weekday at approximately 06:00
         cron('H 6 * * 1-5')
     }
 
     environment {
-        DOTNET_VERSION = '10.0.x'
-        TEST_PROJECT = 'src/GH.TAF.Tests/GH.TAF.Tests.csproj'
+        TEST_PROJECT = 'LocatorsTAF.Tests/LocatorsTAF.Tests.csproj'
     }
 
     stages {
@@ -26,18 +24,6 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
-            }
-        }
-
-        stage('Show Project Structure') {
-            steps {
-                sh '''
-                    echo "Current directory:"
-                    pwd
-
-                    echo "Project files:"
-                    find . -name "*.csproj"
-                '''
             }
         }
 
@@ -61,7 +47,10 @@ pipeline {
 
         stage('API Tests') {
             steps {
-                script {
+                catchError(
+                    buildResult: 'FAILURE',
+                    stageResult: 'FAILURE'
+                ) {
                     sh '''
                         dotnet test "$TEST_PROJECT" \
                             --configuration Release \
@@ -85,13 +74,15 @@ pipeline {
 
         stage('UI Tests') {
             steps {
-                script {
-
-                    echo "Selected browser: ${params.BROWSER}"
-
+                catchError(
+                    buildResult: 'FAILURE',
+                    stageResult: 'FAILURE'
+                ) {
                     withEnv(["BROWSER=${params.BROWSER}"]) {
 
                         sh '''
+                            echo "Running UI tests with browser: $BROWSER"
+
                             dotnet test "$TEST_PROJECT" \
                                 --configuration Release \
                                 --no-build \
@@ -126,7 +117,6 @@ pipeline {
     }
 
     post {
-
         always {
 
             echo 'Publishing test results...'
