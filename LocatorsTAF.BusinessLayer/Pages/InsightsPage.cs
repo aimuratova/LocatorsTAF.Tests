@@ -26,9 +26,7 @@ public class InsightsPage : BasePage
 
     public void ClickRightArrow()
     {
-        var previousTitle = _articleTitle.GetText();
         _rightArrow.Click();
-        _articleTitle.WaitUntilTextIsNot(previousTitle);   // replaces Wait()
     }
 
     public string GetArticleTitle() => _articleTitle.GetText();

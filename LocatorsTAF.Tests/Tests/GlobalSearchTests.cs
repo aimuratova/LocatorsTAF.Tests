@@ -6,7 +6,7 @@ namespace LocatorsTAF.Tests.Tests;
 public class GlobalSearchTests : BaseTest
 {
     [TestCase("BLOCKCHAIN")]
-    [TestCase("Cloud")]
+    [TestCase("AI")]
     [TestCase("Automation")]
     public void GlobalSearch_ShouldReturnRelevantResults(string searchText)
     {

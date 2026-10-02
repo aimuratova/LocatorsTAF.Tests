@@ -16,6 +16,7 @@ namespace LocatorsTAF.CoreLayer.Interfaces
         IReadOnlyCollection<IWebElement> FindElements(By by);        
         IWebElement? TryWaitUntilClickable(By by, TimeSpan timeout);
         void WaitUntilInvisible(By by, TimeSpan? timeout = null);
+        IWebElement WaitUntilVisible(By by, TimeSpan? timeout = null);
         IWebElement WaitUntilClickable(By by, TimeSpan? timeout = null);
         T WaitFor<T>(Func<IWebDriver, T> condition, TimeSpan? timeout = null);
         void WaitForTransientToDisappear(By locator, TimeSpan appearTimeout);

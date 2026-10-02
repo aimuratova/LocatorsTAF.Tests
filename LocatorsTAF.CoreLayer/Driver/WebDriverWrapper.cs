@@ -45,6 +45,16 @@ public class WebDriverWrapper : IWebDriverWrapper
         });
     }
 
+    public IWebElement WaitUntilVisible(By by, TimeSpan? timeout = null)
+    {
+        return CreateWait(timeout).Until(d =>
+        {
+            var element = d.FindElement(by);
+            return element.Displayed && element.Location.Y > 0 
+            && element.Size.Height > 0 ? element : null;
+        });
+    }
+
     public void WaitUntilInvisible(By by, TimeSpan? timeout = null)
     {
         CreateWait(timeout).Until(d => !d.FindElements(by).Any(e => e.Displayed));

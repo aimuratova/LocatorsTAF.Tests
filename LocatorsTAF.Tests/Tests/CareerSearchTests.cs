@@ -13,9 +13,8 @@ public class CareerSearchTests : BaseTest
         var mainPage = new MainPage(DriverWrapper);
         mainPage.AcceptCookiesIfDisplayed();
 
-        var jobsPage = mainPage
-            .NavigateToCareersPage()
-            .NavigateToJobsPage();
+        var jobsPage = mainPage.NavigateToCareersPage().NavigateToJobsPage();
+        jobsPage.AcceptCookiesIfDisplayed();
 
         jobsPage.SelectCountry(country);
         jobsPage.EnterJobTitle(jobTitle);
