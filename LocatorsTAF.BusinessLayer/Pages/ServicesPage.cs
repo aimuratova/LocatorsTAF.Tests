@@ -1,31 +1,23 @@
 ﻿using LocatorsTAF.CoreLayer.Element;
 using LocatorsTAF.CoreLayer.Interfaces;
 using OpenQA.Selenium;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace LocatorsTAF.BusinessLayer.Pages
+namespace LocatorsTAF.BusinessLayer.Pages;
+
+public class ServicesPage : BasePage
 {
-    public class ServicesPage : BasePage
+    private static readonly By RelatedExpertiseHeading =
+        By.XPath("//h2[contains(normalize-space(.),'Our Related Expertise')]");
+
+    private readonly IWebElementWrapper _pageHeading;
+
+    public ServicesPage(IWebDriverWrapper driver) : base(driver)
     {
-        private readonly IWebElementWrapper pageContent;
-
-        public ServicesPage(IWebDriverWrapper webDriverWrapper) : base(webDriverWrapper)
-        {
-            pageContent = new WebElementWrapper(webDriverWrapper, By.Id("main"));
-        }
-
-        public string GetPageTitleInService()
-        {
-            return pageContent.GetText();
-        }
-
-        public bool IsServicesSearchStringIsFound()
-        {
-            return pageContent.GetText().Contains("Our Related Expertise", StringComparison.InvariantCultureIgnoreCase);
-        }
+        _pageHeading = new WebElementWrapper(driver, By.CssSelector("#main h1"));   // verify in DevTools
     }
+
+    public string GetPageTitle() => _pageHeading.GetText();
+
+    public bool IsRelatedExpertiseSectionDisplayed() =>
+        Driver.GetDisplayedTexts(RelatedExpertiseHeading, TimeSpan.FromSeconds(5)).Count > 0;
 }

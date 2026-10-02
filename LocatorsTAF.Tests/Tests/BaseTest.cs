@@ -1,50 +1,52 @@
 ﻿using LocatorsTAF.CoreLayer.Driver;
 using LocatorsTAF.CoreLayer.Interfaces;
 using LocatorsTAF.CoreLayer.Utilities;
-using Microsoft.Extensions.Configuration;
 using NUnit.Framework.Interfaces;
-using OpenQA.Selenium.Support.UI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace LocatorsTAF.Tests.Tests
+namespace LocatorsTAF.Tests.Tests;
+
+public abstract class BaseTest
 {
-    public class BaseTest
+    private DriverManager _driverManager;
+    private IScreenshotMakerService _screenshotMaker;
+
+    protected ILoggingService Logger { get; private set; } = null!;
+    protected IWebDriverWrapper DriverWrapper { get; private set; } = null!;
+
+    [SetUp]
+    public void SetUp()
     {
-        protected ILoggingService Logger = null!;
-        protected IScreenshotMakerService ScreenshotMakerService = null!;
+        Logger = new LoggerService();
+        Logger.Info($"========== Started: {TestContext.CurrentContext.Test.FullName} ==========");
 
-        protected DriverManager DriverManager { get; private set; }
-        protected IWebDriverWrapper DriverWrapper { get; private set; }
-        
-        [SetUp]
-        public void OneTimeSetUp()
+        _driverManager = new DriverManager(TestSetup.Settings);
+        _driverManager.StartBrowser();
+
+        DriverWrapper = new WebDriverWrapper(_driverManager.Current, Logger);
+        _screenshotMaker = new ScreenshotMakerService(DriverWrapper);
+        DriverWrapper.NavigateTo(TestSetup.Settings.AppUrl);
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        var result = TestContext.CurrentContext.Result;
+        try
         {
-            DriverManager = new DriverManager();
-            DriverManager.StartBrowser();
-
-            DriverWrapper = new WebdriverWrapper(DriverManager);
-
-            Logger = new LoggerService();
-            Logger.Info("========== Test started ==========");
-
-            ScreenshotMakerService = new ScreenshotMakerService(DriverWrapper);
-        }
-
-        [TearDown]
-        public void OneTimeTearDown()
-        {            
-            if (TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed)
+            if (result.Outcome.Status == TestStatus.Failed)
             {
-                ScreenshotMakerService.TakeScreenshot();
+                Logger?.Error($"Test failed: {result.Message}");
+                _screenshotMaker?.TakeScreenshot(TestContext.CurrentContext.Test.FullName);
             }
-
-            DriverManager.QuitBrowser();
-
-            Logger.Info("========== Test finished ==========");
+        }
+        catch (Exception ex)
+        {
+            Logger?.Error($"Could not take screenshot: {ex.Message}");
+        }
+        finally
+        {
+            _driverManager?.QuitBrowser();
+            Logger?.Info($"========== Finished: {result.Outcome.Status} ==========");
         }
     }
 }

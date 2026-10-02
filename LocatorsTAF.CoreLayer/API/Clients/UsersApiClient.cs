@@ -1,62 +1,40 @@
 ﻿using LocatorsTAF.CoreLayer.API.Builders;
 using LocatorsTAF.CoreLayer.API.Models;
+using LocatorsTAF.CoreLayer.Interfaces;
 using RestSharp;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
-namespace LocatorsTAF.CoreLayer.API.Clients
+namespace LocatorsTAF.CoreLayer.API.Clients;
+
+public class UsersApiClient : BaseApiClient
 {
-    public class UsersApiClient : BaseApiClient
+    public UsersApiClient(string baseUrl, ILoggingService logger) : base(baseUrl, logger)
     {
-        public UsersApiClient(string baseUrl) : base(baseUrl)
-        {
-        }
+    }
 
-        public async Task<List<User>> GetUsersAsync()
-        {
-            var response = await GetUsersResponseAsync();
+    public Task<RestResponse> GetUsersResponseAsync() => GetAsync("users");
 
-            return JsonSerializer.Deserialize<List<User>>(
-                       response.Content ?? "[]",
-                       new JsonSerializerOptions
-                       {
-                           PropertyNameCaseInsensitive = true
-                       })
-                   ?? [];
-        }
+    public Task<RestResponse> GetInvalidEndpointAsync() => GetAsync("invalidendpoint");
 
-        public async Task<RestResponse> GetUsersResponseAsync()
-        {
-            var request = new ApiRequestBuilder("users", Method.Get)
-                .AddHeader("Accept", "application/json")
-                .Build();
+    public Task<RestResponse> CreateUserAsync(CreateUserRequest user)
+    {
+        var request = new ApiRequestBuilder("users", Method.Post)
+            .AddHeader("Accept", "application/json")
+            .AddJsonBody(user)
+            .Build();
 
-            return await ExecuteAsync(request);
-        }
+        return ExecuteAsync(request);
+    }
 
-        public async Task<RestResponse> CreateUserAsync(CreateUserRequest user)
-        {
-            var request = new ApiRequestBuilder("users", Method.Post)
-                .AddHeader("Accept", "application/json")
-                .AddJsonBody(user)
-                .Build();
+    public List<User> ParseUsers(RestResponse response) =>
+        Deserialize<List<User>>(response) ?? [];
 
-            return await ExecuteAsync(request);
-        }
+    private Task<RestResponse> GetAsync(string resource)
+    {
+        var request = new ApiRequestBuilder(resource, Method.Get)
+            .AddHeader("Accept", "application/json")
+            .Build();
 
-        public async Task<RestResponse> GetInvalidEndpointAsync()
-        {
-            var request = new ApiRequestBuilder(
-                    "invalidendpoint",
-                    Method.Get)
-                .AddHeader("Accept", "application/json")
-                .Build();
-
-            return await ExecuteAsync(request);
-        }
+        return ExecuteAsync(request);
     }
 }

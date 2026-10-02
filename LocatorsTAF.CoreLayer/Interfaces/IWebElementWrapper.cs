@@ -13,8 +13,9 @@ namespace LocatorsTAF.CoreLayer.Interfaces
         void EnterText(string text);
         void ClearText();
         string GetText();
-        IWebElement WaitForElementToBePresent();
-        IWebElement FindChildBy(By by);
-        IWebElement FindElement();
+        void ScrollIntoView();
+        void Hover();
+        void WaitUntilTextIsNot(string previousTitle);
+        IWebElementWrapper Child(By by);
     }
 }

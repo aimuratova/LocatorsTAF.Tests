@@ -1,14 +1,6 @@
-﻿using OpenQA.Selenium;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace LocatorsTAF.CoreLayer.Interfaces;
 
-namespace LocatorsTAF.CoreLayer.Interfaces
+public interface IScreenshotMakerService
 {
-    public interface IScreenshotMakerService
-    {
-        string TakeScreenshot();
-    }
+    string TakeScreenshot(string testName);
 }

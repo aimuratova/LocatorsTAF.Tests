@@ -1,48 +1,62 @@
 ﻿using LocatorsTAF.CoreLayer.Enums;
+using LocatorsTAF.CoreLayer.Utilities;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Edge;
 using OpenQA.Selenium.Firefox;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LocatorsTAF.CoreLayer.Driver
 {
     public static class DriverFactory
     {
-
-        public static IWebDriver Create(BrowserType browserType)
-        {
-            switch (browserType)
+        public static IWebDriver Create(TestSettings settings, string downloadDirectory) =>
+            settings.BrowserType switch
             {
-                case BrowserType.Chrome:
-                    ChromeOptions options = new();
-                    options.AddArgument("--start-maximized");
-                    options.AddArgument("--disable-notifications");
-                    options.AddArgument("--disable-popup-blocking");
+                BrowserType.Chrome => CreateChrome(settings, downloadDirectory),
+                BrowserType.Firefox => CreateFirefox(settings),
+                BrowserType.Edge => CreateEdge(settings),
+                _ => throw new ArgumentOutOfRangeException(
+                         nameof(settings.BrowserType), settings.BrowserType, "Browser not supported")
+            };
 
-                    options.AddArgument(@"user-data-dir=C:\Users\Myrzaliyev\Desktop\Epam\Work\Selenium");
+        private static IWebDriver CreateChrome(TestSettings settings, string downloadDirectory)
+        {
+            var options = new ChromeOptions();
+            options.AddArguments("--disable-notifications", "--disable-popup-blocking");
 
-                    options.AddArgument("--profile-directory=Default");
+            if (settings.Headless)
+                options.AddArguments("--headless=new", "--window-size=1920,1080");
+            else
+                options.AddArgument("--start-maximized");
 
-                    var downloadFolder = Path.Combine(Path.GetTempPath(), "Downloads");
-                    options.AddUserProfilePreference("download.default_directory", downloadFolder);
-                    options.AddUserProfilePreference("download.prompt_for_download", false);
-                    options.AddUserProfilePreference("download.directory_upgrade", true);
-                    options.AddUserProfilePreference("plugins.always_open_pdf_externally", true);
+            options.AddUserProfilePreference("download.default_directory", downloadDirectory);
+            options.AddUserProfilePreference("download.prompt_for_download", false);
+            options.AddUserProfilePreference("download.directory_upgrade", true);
+            options.AddUserProfilePreference("plugins.always_open_pdf_externally", true);
 
-                    return new ChromeDriver(ChromeDriverService.CreateDefaultService(), options, TimeSpan.FromSeconds(30));
-                case BrowserType.Firefox:
-                    return new FirefoxDriver();
-                case BrowserType.Edge:
-                    return new EdgeDriver();
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(browserType), browserType, "Browser not supported");
-            }
+            return new ChromeDriver(ChromeDriverService.CreateDefaultService(), options,
+                                    TimeSpan.FromSeconds(30));
         }
 
+        private static IWebDriver CreateFirefox(TestSettings settings)
+        {
+            var options = new FirefoxOptions();
+            if (settings.Headless)
+            {
+                options.AddArgument("-headless");
+                options.AddArguments("--width=1920", "--height=1080");
+            }
+            return new FirefoxDriver(options);
+        }
+
+        private static IWebDriver CreateEdge(TestSettings settings)
+        {
+            var options = new EdgeOptions();
+            if (settings.Headless)
+                options.AddArguments("--headless=new", "--window-size=1920,1080");
+            else
+                options.AddArgument("--start-maximized");
+            return new EdgeDriver(options);
+        }
     }
 }

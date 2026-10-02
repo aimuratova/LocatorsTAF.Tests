@@ -1,40 +1,34 @@
-﻿using LocatorsTAF.CoreLayer.Driver;
-using LocatorsTAF.CoreLayer.Interfaces;
-using OpenQA.Selenium;
-namespace LocatorsTAF.CoreLayer.Utilities
+﻿using LocatorsTAF.CoreLayer.Interfaces;
+namespace LocatorsTAF.CoreLayer.Utilities;
+
+public class ScreenshotMakerService : IScreenshotMakerService
 {
-    public class ScreenshotMakerService : IScreenshotMakerService
+    private static readonly string ScreenshotsFolder =
+        Path.Combine(AppContext.BaseDirectory, "Screenshots");
+
+    private readonly IWebDriverWrapper _driver;
+
+    public ScreenshotMakerService(IWebDriverWrapper driver)
     {
-        private readonly string _screenshotsFolder;
-        private readonly IWebDriverWrapper _webDriverWrapper;
+        _driver = driver;
+    }
 
-        public ScreenshotMakerService(IWebDriverWrapper webDriverWrapper)
-        {
-            _screenshotsFolder = Path.Combine(AppContext.BaseDirectory, "Screenshots");
-            Directory.CreateDirectory(_screenshotsFolder);
+    public string TakeScreenshot(string testName)
+    {
+        Directory.CreateDirectory(ScreenshotsFolder);
 
-            _webDriverWrapper = webDriverWrapper;
-        }
-                
-        public string TakeScreenshot()
-        {
-            var fileName = $"{DateTime.Now:yyyyMMdd_HHmmss_fff}.png";
-            var driver = _webDriverWrapper.GetWebDriver();
+        var fileName = $"{Sanitize(testName)}_{DateTime.Now:yyyyMMdd_HHmmss_fff}.png";
+        var path = Path.Combine(ScreenshotsFolder, fileName);
 
-            if (driver is not ITakesScreenshot screenshotDriver)
-            {
-                throw new InvalidOperationException(
-                    "Current driver does not support screenshots.");
-            }
+        File.WriteAllBytes(path, _driver.TakeScreenshot());
+        return path;
+    }
 
-            var screenshot = screenshotDriver.GetScreenshot();
-
-            var filePath = Path.Combine(_screenshotsFolder, fileName);
-
-            screenshot.SaveAsFile(filePath);
-
-            return filePath;
-        }
-
+    private static string Sanitize(string name)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var clean = new string(name.Select(c => invalid.Contains(c) || c == ' ' ? '_' : c).ToArray());
+        return clean.Length > 80 ? clean[..80] : clean;
     }
 }
+

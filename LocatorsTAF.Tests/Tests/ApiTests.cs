@@ -2,199 +2,90 @@
 using LocatorsTAF.CoreLayer.API.Models;
 using LocatorsTAF.CoreLayer.Interfaces;
 using LocatorsTAF.CoreLayer.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
-namespace LocatorsTAF.Tests.Tests
+namespace LocatorsTAF.Tests.Tests;
+
+[Category("API")]
+[Parallelizable(ParallelScope.All)]
+[FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
+public class UsersApiTests
 {
-    [TestFixture]
-    [Category("API")]
-    [Parallelizable(ParallelScope.All)]
-    public class ApiTests
+    private UsersApiClient _client = null!;
+
+    [SetUp]
+    public void SetUp() =>
+        _client = new UsersApiClient(TestSetup.Settings.ApiBaseUrl, new LoggerService());
+
+    [Test]
+    public async Task GetUsers_ReturnsOkWithJsonContentType()
     {
-        protected ILoggingService Log = null!;
-        private UsersApiClient _usersApiClient = null!;
-        private readonly string ApiBaseUrl;
+        var response = await _client.GetUsersResponseAsync();
 
-        public ApiTests()
+        Assert.Multiple(() =>
         {
-            ApiBaseUrl = ConfigurationService.GetConfigurationValue("ApiSettings:BaseUrl");
-            if (string.IsNullOrEmpty(ApiBaseUrl))
-            {
-                throw new InvalidOperationException("API base URL is not configured. Please check the configuration settings.");
-            }
-        }
-
-        [SetUp]
-        public void SetUp()
-        {
-            _usersApiClient = new UsersApiClient(ApiBaseUrl);
-            Log = new LoggerService();
-            Log.Info("========== API test setup completed ==========");
-        }
-
-        [Test]
-        [Category("API")]
-        public async Task GetUsers_ShouldReturnUsersSuccessfully()
-        {
-            Log.Info("Starting GET users test");
-            Log.Info("Sending GET request to /users");
-
-            var response = await _usersApiClient.GetUsersResponseAsync();
-
-            Log.Info(string.Format("Received response with status code {0}", response.StatusCode));
-
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-            Assert.That(response.ErrorMessage, Is.Null.Or.Empty, "Response contains an error.");
+            Assert.That(response.ContentType, Does.StartWith("application/json"));
+        });
+    }
 
-            var users = await _usersApiClient.GetUsersAsync();
+    [Test]
+    public async Task GetUsers_ReturnsTenUniqueUsersWithRequiredFields()
+    {
+        var response = await _client.GetUsersResponseAsync();
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
 
-            Assert.That(users, Is.Not.Null.And.Not.Empty);
+        var users = _client.ParseUsers(response);   // no second request, see below
 
-            Log.Info(string.Format("Received {0} users", users.Count));
+        Assert.That(users, Has.Count.EqualTo(10));
+        Assert.That(users.Select(u => u.Id), Is.Unique, "User IDs are not unique.");
 
-            foreach (var user in users)
-            {
-                Assert.Multiple(() =>
-                {
-                    Assert.That(user.Id, Is.GreaterThan(0));
-                    Assert.That(user.Name, Is.Not.Null.And.Not.Empty);
-                    Assert.That(user.Username, Is.Not.Null.And.Not.Empty);
-                    Assert.That(user.Email, Is.Not.Null.And.Not.Empty);
-                    Assert.That(user.Address, Is.Not.Null);
-                    Assert.That(user.Phone, Is.Not.Null.And.Not.Empty);
-                    Assert.That(user.Website, Is.Not.Null.And.Not.Empty);
-                    Assert.That(user.Company, Is.Not.Null);
-                });
-            }
+        foreach (var user in users)
+            AssertHasRequiredFields(user);
+    }
 
-            Log.Info("GET users test completed successfully");
-        }
+    [Test]
+    public async Task CreateUser_ReturnsCreatedUserMatchingRequest()
+    {
+        var request = new CreateUserRequest { Name = "Test User", Username = "test_user" };
 
-        [Test]
-        [Category("API")]
-        public async Task GetUsers_ShouldReturnJsonContentType()
+        var response = await _client.CreateUserAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.That(response.Content, Is.Not.Null.And.Not.Empty, "Response body is empty.");
+
+        var created = _client.Deserialize<CreateUserResponse>(response);
+
+        Assert.That(created, Is.Not.Null, "Created user response could not be deserialized.");
+        Assert.Multiple(() =>
         {
-            Log.Info("Starting content-type validation test");
-            Log.Info("Sending GET request to /users");
+            Assert.That(created!.Id, Is.GreaterThan(0));
+            Assert.That(created.Name, Is.EqualTo(request.Name));
+            Assert.That(created.Username, Is.EqualTo(request.Username));
+        });
+    }
 
-            var response = await _usersApiClient.GetUsersResponseAsync();
+    [Test]
+    public async Task GetInvalidEndpoint_ReturnsNotFound()
+    {
+        var response = await _client.GetInvalidEndpointAsync();
 
-            Log.Info(string.Format("Received response with status code {0}", response.StatusCode));
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+    }
 
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-            Assert.That(response.ErrorMessage, Is.Null.Or.Empty, "Response contains an error.");
-
-            var contentType = response.ContentType;
-
-            Log.Info(string.Format("Received Content-Type header: {0}", contentType));
-
-            Assert.That(contentType, Is.Not.Null.And.Not.Empty, "Content-Type header does not exist.");
-            Assert.That(contentType, Is.EqualTo("application/json"));
-            Log.Info("Content-Type validation completed successfully");
-        }
-
-        [Test]
-        [Category("API")]
-        public async Task GetUsers_ShouldReturnTenUsersWithValidData()
+    private static void AssertHasRequiredFields(User user)   // use your model's class name
+    {
+        Assert.Multiple(() =>
         {
-            Log.Info("Starting users response body validation test");
-
-            Log.Info("Sending GET request to /users");
-
-            var response = await _usersApiClient.GetUsersResponseAsync();
-
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-
-            Assert.That(response.ErrorMessage, Is.Null.Or.Empty, "Response contains an error.");
-
-            var users = await _usersApiClient.GetUsersAsync();
-
-            Log.Info("Validating that response contains exactly 10 users");
-
-            Assert.That(users, Has.Count.EqualTo(10));
-            Log.Info("Validating user IDs are unique");
-
-            var uniqueIds = users
-                .Select(user => user.Id)
-                .Distinct()
-                .Count();
-
-            Assert.That(uniqueIds, Is.EqualTo(users.Count), "User IDs are not unique.");
-
-            Log.Info("Validating Name, Username and Company.Name");
-
-            foreach (var user in users)
-            {
-                Assert.Multiple(() =>
-                {
-                    Assert.That(user.Id, Is.GreaterThan(0), "User ID should be greater than zero.");
-                    Assert.That(user.Name, Is.Not.Null.And.Not.Empty, $"User {user.Id} has an empty Name.");
-                    Assert.That(user.Username, Is.Not.Null.And.Not.Empty, $"User {user.Id} has an empty Username.");
-                    Assert.That(user.Company, Is.Not.Null, $"User {user.Id} has no Company."); 
-                    Assert.That(user.Company.Name, Is.Not.Null.And.Not.Empty, $"User {user.Id} has an empty Company.Name.");
-                });
-            }
-
-            Log.Info("Users response body validation completed successfully");
-        }
-
-        [Test]
-        [Category("API")]
-        public async Task CreateUser_ShouldCreateUserSuccessfully()
-        {
-            Log.Info("Starting create user test");
-
-            var newUser = new CreateUserRequest
-            {
-                Name = "Test User",
-                Username = "test_user"
-            };
-
-            Log.Info(string.Format("Creating user with Name: {0}, Username: {1}", newUser.Name, newUser.Username));
-
-            var response = await _usersApiClient.CreateUserAsync(newUser);
-
-            Log.Info(string.Format("Received response with status code {0}", response.StatusCode));
-
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
-            Assert.That(response.ErrorMessage, Is.Null.Or.Empty, "Response contains an error.");
-            Assert.That(response.Content, Is.Not.Null.And.Not.Empty, "Response body is empty.");
-
-            var createdUser = JsonSerializer.Deserialize<CreateUserResponse>(response.Content!, 
-                    new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-
-            Assert.That(createdUser, Is.Not.Null, "Created user response could not be deserialized.");
-
-            Log.Info(string.Format("Created user ID: {0}", createdUser!.Id));
-
-            Assert.That(createdUser.Id, Is.GreaterThan(0), "Created user does not contain a valid ID.");
-            Log.Info("Create user test completed successfully");
-        }
-
-        [Test]
-        [Category("API")]
-        public async Task GetInvalidEndpoint_ShouldReturnNotFound()
-        {
-            Log.Info("Starting invalid endpoint test");
-            Log.Info("Sending GET request to /invalidendpoint");
-
-            var response = await _usersApiClient.GetInvalidEndpointAsync();
-
-            Log.Info(string.Format("Received response with status code {0}", response.StatusCode));
-
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
-            Assert.That(response.ErrorMessage, Is.Null.Or.Empty, "Response contains an error."); 
-
-            Log.Info("Invalid endpoint test completed successfully");
-        }
+            Assert.That(user.Id, Is.GreaterThan(0), "User ID should be greater than zero.");
+            Assert.That(user.Name, Is.Not.Null.And.Not.Empty, $"User {user.Id}: Name is empty.");
+            Assert.That(user.Username, Is.Not.Null.And.Not.Empty, $"User {user.Id}: Username is empty.");
+            Assert.That(user.Email, Is.Not.Null.And.Not.Empty, $"User {user.Id}: Email is empty.");
+            Assert.That(user.Address, Is.Not.Null, $"User {user.Id}: Address is missing.");
+            Assert.That(user.Phone, Is.Not.Null.And.Not.Empty, $"User {user.Id}: Phone is empty.");
+            Assert.That(user.Website, Is.Not.Null.And.Not.Empty, $"User {user.Id}: Website is empty.");
+            Assert.That(user.Company?.Name, Is.Not.Null.And.Not.Empty, $"User {user.Id}: Company.Name is empty.");
+        });
     }
 }

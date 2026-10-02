@@ -1,34 +1,29 @@
 ﻿using LocatorsTAF.BusinessLayer.Pages;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace LocatorsTAF.Tests.Tests
+namespace LocatorsTAF.Tests.Tests;
+
+[Category("UI")]
+public class GlobalSearchTests : BaseTest
 {
-    [Category("UI")]
-    public class GlobalSearchTests : BaseTest
+    [TestCase("BLOCKCHAIN")]
+    [TestCase("Cloud")]
+    [TestCase("Automation")]
+    public void GlobalSearch_ShouldReturnRelevantResults(string searchText)
     {
-        
-        [TestCase("BLOCKCHAIN")]
-        [TestCase("Cloud")]
-        [TestCase("Automation")]
-        public void GlobalSearch_ShouldReturnRelevantResults(string searchText)
-        {
-            Logger.Info($"GlobalSearchTests test with parameters: searchText {searchText}");
+        var mainPage = new MainPage(DriverWrapper);
+        mainPage.AcceptCookiesIfDisplayed();
 
-            var mainPage = new MainPage(DriverWrapper);
-            mainPage.AcceptCookiesIfDisplayed();
+        var resultTexts = mainPage
+            .PerformGlobalSearch(searchText)
+            .GetResultTexts();
 
-            var searchResultsPage = mainPage.PerformGlobalSearch(searchText);
+        Assert.That(resultTexts, Is.Not.Empty, "No search results were found.");
 
-            var resultLinks = searchResultsPage.GetResultLinks();
+        var irrelevant = resultTexts
+            .Where(text => !text.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+            .ToList();
 
-            Assert.That(resultLinks, Is.Not.Empty, "No search results were found.");
-            Assert.That(resultLinks.All(link => link.Text.ToLower().Contains(searchText.ToLower())),
-                $"Not all search results contain the search text '{searchText}'.");
-            Logger.Info($"GlobalSearchTests test with parameters: searchText {searchText} end");
-        }
+        Assert.That(irrelevant, Is.Empty,
+            $"These results do not contain '{searchText}'");
     }
 }

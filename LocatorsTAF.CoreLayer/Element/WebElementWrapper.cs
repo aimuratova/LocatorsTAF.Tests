@@ -1,108 +1,68 @@
-﻿using LocatorsTAF.CoreLayer.Driver;
-using LocatorsTAF.CoreLayer.Interfaces;
-using LocatorsTAF.CoreLayer.Utilities;
+﻿using LocatorsTAF.CoreLayer.Interfaces;
 using OpenQA.Selenium;
-using OpenQA.Selenium.Interactions;
-using OpenQA.Selenium.Support.UI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace LocatorsTAF.CoreLayer.Element
+namespace LocatorsTAF.CoreLayer.Element;
+
+public class WebElementWrapper : IWebElementWrapper
 {
-    public class WebElementWrapper : IWebElementWrapper
+    private readonly IWebDriverWrapper _driver;
+    private readonly By _locator;
+    private readonly WebElementWrapper? _parent;
+
+    public WebElementWrapper(IWebDriverWrapper driver, By locator)
     {
-        private readonly IWebDriverWrapper _driver;
-        private readonly By _locator;
-        private readonly TimeSpan _timeout;
-
-        public WebElementWrapper(IWebDriverWrapper driver, By locator)
-        {
-            _driver = driver;
-            _locator = locator;
-            _timeout = TimeSpan.FromSeconds(ConfigurationService.ImplicitWaitTime);
-        }
-
-        public void Click()
-        {
-            var element = WaitForElementToBePresent();
-            new Actions(_driver.GetWebDriver()).MoveToElement(element).Click().Perform();
-        }
-
-        public void EnterText(string text)
-        {
-            var element = WaitForElementToBePresent();
-            element.Clear();
-            element.SendKeys(text);
-        }
-
-        public void ClearText()
-        {
-            var element = WaitForElementToBePresent();
-
-            element.Click();
-            element.SendKeys(Keys.Control + "a");
-            element.SendKeys(Keys.Delete);
-        }
-
-        public string GetText()
-        {
-            var element = WaitForElementToBePresent();
-            return element.Text;
-        }
-
-        public IWebElement FindElement()
-        {
-            var elementPresent = WaitForElementToBePresent();
-            return elementPresent;
-        }
-                
-        public IWebElement WaitForElementToBePresent()
-        {            
-            var wait = new WebDriverWait(_driver.GetWebDriver(), _timeout);
-
-            return wait.Until(drv =>
-            {
-                try
-                {
-                    var el = drv.FindElement(_locator);
-                    return el.Displayed ? el : null;
-                }
-                catch (NoSuchElementException)
-                {
-                    Console.WriteLine("WaitForElementToBePresent method: 'NoSuchElementException' is found.");
-                }
-                return null;
-            });
-        }
-
-        public IWebElement FindChildBy(By by)
-        {
-            var parent = WaitForElementToBePresent();
-
-            var wait = new WebDriverWait(_driver.GetWebDriver(), _timeout);
-
-            return wait.Until(_ =>
-            {
-                try
-                {
-                    var child = parent.FindElement(by);
-                    return child.Displayed ? child : null;
-                }
-                catch (NoSuchElementException)
-                {
-                    return null;
-                }
-                catch (StaleElementReferenceException)
-                {
-                    // Reacquire the parent if it became stale
-                    parent = WaitForElementToBePresent();
-                    return null;
-                }
-            });
-        }
+        _driver = driver;
+        _locator = locator;
     }
+    
+    private WebElementWrapper(WebElementWrapper parent, By locator)
+        : this(parent._driver, locator)
+    {
+        _parent = parent;
+    }
+
+    public void Click() => Perform(e => e.Click());
+
+    public void ClearText() => Perform(e =>
+    {
+        e.Click();
+        e.SendKeys(Keys.Control + "a");
+        e.SendKeys(Keys.Delete);
+    });
+
+    public void EnterText(string text) => Perform(e => e.SendKeys(text));
+
+    public string GetText() => Read(e => e.Text);
+
+    public string GetAttribute(string name) => Read(e => e.GetAttribute(name) ?? "");
+        
+    public IWebElementWrapper Child(By by) => new WebElementWrapper(this, by);
+
+    public void ScrollIntoView() => Perform(e =>
+    _driver.ExecuteScript("arguments[0].scrollIntoView({block: 'center'});", e));
+
+    public void Hover() => Perform(e => _driver.MoveToElement(e));
+        
+    private void Perform(Action<IWebElement> action) =>
+        _driver.WaitFor(d =>
+        {
+            var element = d.FindElement(_locator);
+            if (!element.Displayed) return false;
+            action(element);
+            return true;
+        });
+
+    private string Read(Func<IWebElement, string> read) =>
+        _driver.WaitFor(d =>
+        {
+            var element = d.FindElement(_locator);
+            return element.Displayed ? read(element) : null!;
+        });
+
+    public void WaitUntilTextIsNot(string oldText) =>
+        _driver.WaitFor(d =>
+        {
+            var element = d.FindElement(_locator);
+            return element.Displayed && element.Text != oldText;
+        });
 }

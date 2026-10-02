@@ -1,38 +1,31 @@
 ﻿using LocatorsTAF.BusinessLayer.Pages;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Support.UI;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.Metrics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace LocatorsTAF.Tests.Tests
+namespace LocatorsTAF.Tests.Tests;
+
+[Category("UI")]
+public class CarouselArticleTest : BaseTest
 {
-    [Category("UI")]
-    public class CarouselArticleTest : BaseTest
+    [Test]
+    public void CarouselArticleShouldMatchOpenedArticle()
     {
-        [Test]
-        public void CarouselArticleShouldMatchOpenedArticle()
+        var mainPage = new MainPage(DriverWrapper);
+        mainPage.AcceptCookiesIfDisplayed();
+
+        var insightsPage = mainPage.NavigateToInsightsPage();
+        insightsPage.ClickRightArrow();
+        insightsPage.ClickRightArrow();  
+
+        var previewTitle = insightsPage.GetArticleTitle();
+
+        insightsPage.ClickArticle();
+
+        var articleTitle = insightsPage.GetReadMoreArticleTitle();
+
+        Assert.Multiple(() =>
         {
-            Logger.Info($"CarouselArticleTest test CarouselArticleShouldMatchOpenedArticle");
-            var mainPage = new MainPage(DriverWrapper);
-            mainPage.AcceptCookiesIfDisplayed();
-
-            var insightPage = mainPage.NavigateToInsightsPage();
-            insightPage.ClickRightArrow();
-            insightPage.Wait();
-            insightPage.ClickRightArrow();
-
-            string expected = insightPage.GetArticleTitle().Trim();
-
-            insightPage.ClickArticle();
-
-            string actual = insightPage.GetReadMoreArticleTitle().Trim();
-
-            Assert.That(expected.ToLower().Contains(actual.ToLower()), Is.True);
-            Logger.Info($"CarouselArticleTest test CarouselArticleShouldMatchOpenedArticle end");
-        }
+            Assert.That(articleTitle, Is.Not.Empty, "Opened article has no title");
+            Assert.That(previewTitle, Does.Contain(articleTitle).IgnoreCase,
+                "Carousel title should contain the opened article's title");
+        });
     }
 }

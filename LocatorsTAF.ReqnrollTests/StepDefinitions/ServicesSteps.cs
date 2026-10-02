@@ -1,43 +1,25 @@
 ﻿using LocatorsTAF.BusinessLayer.Pages;
 using Reqnroll;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace LocatorsTAF.ReqnrollTests.StepDefinitions
+namespace LocatorsTAF.ReqnrollTests.StepDefinitions;
+
+[Binding]
+public class ServicesSteps(DriverContext driverContext)
 {
-    [Binding]
-    public class ServicesSteps(DriverContext driverContext)
-    {
-        private readonly MainPage _mainPage = new MainPage(driverContext.DriverWrapper);
-        private ServicesPage _servicesPage;
+    private readonly MainPage _mainPage = new(driverContext.DriverWrapper);
+    private ServicesPage _servicesPage = null!;
 
-        [Given("I open EPAM home page")]
-        public void GivenIOpenEPAMHomePage()
-        {
-            _mainPage.AcceptCookiesIfDisplayed();
-        }
+    [When("I select {string} from the Services menu")]
+    public void WhenISelectFromTheServicesMenu(string serviceName) =>
+        _servicesPage = _mainPage.NavigateToServices(serviceName);
+        
+    [Then("page title should contain {string}")]
+    public void ThenPageTitleShouldContain(string expectedText) =>
+    Assert.That(_servicesPage.GetPageTitle(), Does.Contain(expectedText).IgnoreCase,
+        "Service page title should contain the selected service name");
 
-        [When("I select {string}")]
-        public void WhenISelect(string p0)
-        {
-            _servicesPage = _mainPage.NavigateToServices(p0);
-        }
-
-        [Then("page title should contain {string}")]
-        public void ThenPageTitleShouldContain(string p0)
-        {
-            var pageTitle = _servicesPage.GetPageTitleInService();
-            Assert.That(pageTitle, Contains.Substring(p0));
-        }
-
-        [Then("Our Related Expertise section is displayed")]
-        public void ThenOurRelatedExpertiseSectionIsDisplayed()
-        {
-            var isTextFound = _servicesPage.IsServicesSearchStringIsFound();
-            Assert.That(isTextFound, Is.True);
-        }
-    }
+    [Then("Our Related Expertise section is displayed")]
+    public void ThenOurRelatedExpertiseSectionIsDisplayed() =>
+        Assert.That(_servicesPage.IsRelatedExpertiseSectionDisplayed(), Is.True,
+            "'Our Related Expertise' section is not displayed");
 }

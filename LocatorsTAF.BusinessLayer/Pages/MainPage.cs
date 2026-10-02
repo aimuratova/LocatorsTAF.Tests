@@ -1,89 +1,71 @@
 ﻿using LocatorsTAF.CoreLayer.Element;
 using LocatorsTAF.CoreLayer.Interfaces;
-using LocatorsTAF.CoreLayer.Utilities;
 using OpenQA.Selenium;
-using OpenQA.Selenium.Interactions;
-using OpenQA.Selenium.Support.UI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace LocatorsTAF.BusinessLayer.Pages
+namespace LocatorsTAF.BusinessLayer.Pages;
+
+public class MainPage : BasePage
 {
-    public class MainPage : BasePage
+    private static readonly By ServicesMenuItem =
+        By.XPath("//li[contains(@class,'top-navigation__item')][.//a[@href='/services']]");
+
+    private readonly IWebElementWrapper _careersLink;
+    private readonly IWebElementWrapper _searchMagnifier;
+    private readonly IWebElementWrapper _searchInput;
+    private readonly IWebElementWrapper _findButton;
+    private readonly IWebElementWrapper _pdfDownloadLink;
+    private readonly IWebElementWrapper _insightLink;
+    private readonly IWebElementWrapper _servicesMenu;
+
+    public const string CodeOfConductFileName = "Code_of_Ethical_Conduct.pdf";
+
+    public MainPage(IWebDriverWrapper driver) : base(driver)
     {
-        private readonly IWebElementWrapper careersLink;
-        private readonly IWebElementWrapper searchMagnifier;
-        private readonly IWebElementWrapper searchInput;
-        private readonly IWebElementWrapper findButton;
-        private readonly IWebElementWrapper pdfDownloadLink;
-        private readonly IWebElementWrapper insightLink;
-        private readonly IWebElementWrapper servicesLink;
+        _careersLink = new WebElementWrapper(driver, By.CssSelector("a.top-navigation__item-link[href='/careers']")); // verify href
+        _searchMagnifier = new WebElementWrapper(driver, By.CssSelector("button[class*='search']"));
+        _searchInput = new WebElementWrapper(driver, By.XPath("//input[@type='search']"));
+        _findButton = new WebElementWrapper(driver, By.XPath("//button[.//span[normalize-space()='Find']]"));
+        _pdfDownloadLink = new WebElementWrapper(driver, By.XPath($"//a[contains(@href, '{CodeOfConductFileName}')]"));
+        _insightLink = new WebElementWrapper(driver, By.CssSelector("a.top-navigation__item-link[href='/insights']"));
+        _servicesMenu = new WebElementWrapper(driver, ServicesMenuItem);
+    }
 
-        private WebDriverWait wait;
+    public InsightsPage NavigateToInsightsPage()
+    {
+        _insightLink.Click();
+        return new InsightsPage(Driver);
+    }
 
-        public MainPage(IWebDriverWrapper driver) : base(driver)
-        {
-            careersLink = new WebElementWrapper(driver, By.PartialLinkText("Care"));
-            searchMagnifier = new WebElementWrapper(driver, By.CssSelector("button[class*='search']"));
-            searchInput = new WebElementWrapper(driver, By.XPath("//input[@type='search']"));
-            findButton = new WebElementWrapper(driver, By.XPath("//button[.//span[normalize-space()='Find']]"));
-            pdfDownloadLink = new WebElementWrapper(driver, By.XPath("//a[contains(@href, 'Code_of_Ethical_Conduct.pdf') and normalize-space()='Code of Ethical Conduct (PDF)']"));
-            insightLink = new WebElementWrapper(driver, By.CssSelector("a.top-navigation__item-link[href='/insights']"));
-            servicesLink = new WebElementWrapper(driver, By.XPath("//a[@href='/services']"));
+    public CareersPage NavigateToCareersPage()
+    {
+        _careersLink.Click();
+        return new CareersPage(Driver);
+    }
 
-            wait = new WebDriverWait(driver.GetWebDriver(), TimeSpan.FromSeconds(ConfigurationService.ImplicitWaitTime));
+    public SearchResultPage PerformGlobalSearch(string searchText)
+    {
+        _searchMagnifier.Click();
+        _searchInput.ClearText();
+        _searchInput.EnterText(searchText);
+        _findButton.Click();
+        return new SearchResultPage(Driver);
+    }
 
-        }
+    public void ClickToDownloadFile()
+    {
+        _pdfDownloadLink.ScrollIntoView();
+        _pdfDownloadLink.Click();
+    }
 
-        public InsightsPage NavigateToInsightsPage()
-        {
-            insightLink.Click();
-            return new InsightsPage(driver);
-        }
+    public ServicesPage NavigateToServices(string serviceName)
+    {
+        _servicesMenu.Hover();
 
-        public CareersPage NavigateToCareersPage()
-        {
-            careersLink.Click();
-            return new CareersPage(driver);
-        }
+        // Built here because the locator depends on the parameter.
+        new WebElementWrapper(Driver,
+                By.XPath($"//div[contains(@class,'top-navigation__flyout')]//a[normalize-space()='{serviceName}']"))
+            .Click();
 
-        public SearchResultPage PerformGlobalSearch(string searchText)
-        {
-            searchMagnifier.Click();
-
-            searchInput.Click();
-            searchInput.ClearText();
-            searchInput.EnterText(searchText);
-
-            findButton.Click();
-
-            return new SearchResultPage(driver);
-        }
-
-        public void ClickToDownloadFile()
-        {
-            var pdf = pdfDownloadLink.FindElement();
-            ((IJavaScriptExecutor)driver.GetWebDriver()).ExecuteScript("arguments[0].scrollIntoView({block: 'center'});", pdf);
-            pdf.Click();
-        }
-
-        public ServicesPage NavigateToServices(string searchServiceText)
-        {
-            var services = wait.Until(d=> d.FindElement(By.XPath("//li[contains(@class,'top-navigation__item')][.//a[@href='/services']]")));
-
-            new Actions(driver.GetWebDriver())
-                .MoveToElement(services)
-                .Pause(TimeSpan.FromMilliseconds(500))
-                .Perform();
-
-            var service = wait.Until(d => d.FindElement(By.XPath($"//div[contains(@class,'top-navigation__flyout')]//a[normalize-space()='{searchServiceText}']")));
-
-            service.Click();
-
-            return new ServicesPage(driver);
-        }
+        return new ServicesPage(Driver);
     }
 }

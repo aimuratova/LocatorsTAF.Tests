@@ -1,48 +1,30 @@
 ﻿using LocatorsTAF.BusinessLayer.Pages;
-using OpenQA.Selenium;
+using LocatorsTAF.CoreLayer.Enums;
+using LocatorsTAF.CoreLayer.Helpers;
 using OpenQA.Selenium.Support.UI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace LocatorsTAF.Tests.Tests
+namespace LocatorsTAF.Tests.Tests;
+
+[Category("UI")]
+public class PdfDownloadTest : BaseTest
 {
-    [Category("UI")]
-    public class PdfDownloadTest : BaseTest
+    [Test]
+    public void CodeOfEthicalConductPdf_IsDownloaded()
     {
-        [TestCase("Code_of_Ethical_Conduct.pdf")]
-        public void PdfShouldBeDownloaded(string fileName)
-        {
-            Logger.Info($"PdfDownloadTest test with parameters: fileName {fileName}");
+        Assume.That(TestSetup.Settings.BrowserType, Is.EqualTo(BrowserType.Chrome),
+            "Download preferences are configured for Chrome only.");
 
-            var mainPage = new MainPage(DriverWrapper);
-            mainPage.AcceptCookiesIfDisplayed();
+        var mainPage = new MainPage(DriverWrapper);
+        mainPage.AcceptCookiesIfDisplayed();
 
-            mainPage.ClickToDownloadFile();
+        mainPage.ClickToDownloadFile();
 
-            var downloadFolder = Path.Combine(Path.GetTempPath(), "Downloads");
-            Directory.CreateDirectory(downloadFolder);
-            var isFileDownloaded = WaitForDownload(downloadFolder, fileName);
+        var downloadFolder = Path.Combine(Path.GetTempPath(), "Downloads");
+        Directory.CreateDirectory(downloadFolder);
 
-            Logger.Info($"PdfDownloadTest test with parameters: fileName {fileName} is downloaded {isFileDownloaded.ToString()}");
+        var path = FileDownloadHelper.WaitForFile(
+            downloadFolder, MainPage.CodeOfConductFileName, TimeSpan.FromSeconds(30));
 
-            Assert.That(isFileDownloaded, Is.True);
-            Logger.Info($"PdfDownloadTest test with parameters: fileName {fileName} end");
-        }
-
-        private bool WaitForDownload(string folder, string fileName, int timeoutSeconds = 30)
-        {
-            var wait = new WebDriverWait(new SystemClock(), DriverWrapper.GetWebDriver(),
-                TimeSpan.FromSeconds(timeoutSeconds),
-                TimeSpan.FromMilliseconds(500));
-
-            return wait.Until(_ =>
-            {
-                var path = Path.Combine(folder, fileName);
-                return File.Exists(path) && !File.Exists(path + ".crdownload");
-            });
-        }
+        Assert.That(new FileInfo(path).Length, Is.GreaterThan(0), "Downloaded file is empty.");
     }
 }

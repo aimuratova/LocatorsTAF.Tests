@@ -8,26 +8,25 @@ using System.Threading.Tasks;
 
 namespace LocatorsTAF.BusinessLayer.Pages
 {
-    public class BasePage
+    public abstract class BasePage
     {
-        protected IWebDriverWrapper driver;
+        private static readonly By CookieAcceptButton = By.Id("onetrust-accept-btn-handler");
+
+        protected IWebDriverWrapper Driver { get; }
 
         protected BasePage(IWebDriverWrapper driver)
         {
-            this.driver = driver;
+            Driver = driver;
         }
 
         public void AcceptCookiesIfDisplayed()
         {
-            try
-            {
-                var acceptButton = driver.GetWebDriver().FindElement(By.Id("onetrust-accept-btn-handler"));
-                acceptButton.Click();
-            }
-            catch (NoSuchElementException)
-            {
-                // Cookie banner was not displayed
-            }
+            var acceptButton = Driver.TryWaitUntilClickable(CookieAcceptButton, TimeSpan.FromSeconds(3));
+            if (acceptButton is null)
+                return; // banner was not shown
+
+            acceptButton.Click();
+            Driver.WaitUntilInvisible(CookieAcceptButton);
         }
     }
 }
